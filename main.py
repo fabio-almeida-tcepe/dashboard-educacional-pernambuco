@@ -129,7 +129,7 @@ class ModalidadeConfig:
 MODALIDADES: dict[str, ModalidadeConfig] = {
     "Ensino Regular": ModalidadeConfig(
         arquivo="Ensino Regular.parquet",
-        etapa_valores={"padrao": "Educação Infantil"},
+        etapa_valores={},
         serie_col="Ano/Série",
         texto_ajuda=(
             "No Ensino Regular, selecione primeiro a Etapa "
@@ -514,11 +514,6 @@ def filtrar_dados(df, modalidade_key, anos, redes, filtros):
 
     return result_df
 
-
-# ─── 10. INICIALIZAÇÃO E CARREGAMENTO ──────────────────────────────
-if "tempo_inicio" not in st.session_state:
-    st.session_state["tempo_inicio"] = time.time()
-
 # ─── 11. SELEÇÃO DE MODALIDADE / NÍVEL ─────────────────────────────
 with st.sidebar:
     st.sidebar.title("Modalidade")
@@ -529,7 +524,7 @@ with st.sidebar:
         label_visibility="collapsed"
     )
 
-    st.sidebar.title("Filtros")
+    st.sidebar.title("Nível de Agregação")
     nivel_ui = st.radio(
         "Nível de Agregação",
         ["Escolas", "Municípios", "Pernambuco"],
@@ -588,7 +583,7 @@ st.markdown(
 )
 
 # ─── 14. CONFIGURAÇÕES ────────────────────────────────────────────
-with st.sidebar.expander("Configurações", False):
+with st.sidebar.expander("Ajustes de layout", False):
     st.markdown("""<style>
     [data-testid="stExpander"] [data-testid="stSlider"] > div:first-child,
     [data-testid="stExpander"] [data-testid="stSlider"] > div:nth-child(2){
@@ -921,11 +916,8 @@ data_atualizacao = obter_data_atualizacao_codigo(arquivos_codigo, "America/Recif
 
 
 with footer_left:
-    st.caption(f"© Dashboard Educacional – atualização: {data_atualizacao}")
-    delta = time.time() - st.session_state.get("tempo_inicio", time.time())
-    st.caption(f"⏱️ Tempo de processamento: {delta:.2f}s")
+    st.caption(f"© Dashboard de Matrículas GEDU1 – atualização: {data_atualizacao}")
+
 
 with footer_right:
     st.caption(f"Build (UTC): {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}")
-
-st.session_state["tempo_inicio"] = time.time()
