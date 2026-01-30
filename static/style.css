@@ -393,18 +393,28 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] {
   align-items: flex-start !important;
 }
 
-/* 2) Alinhar tudo à esquerda (cabeçalho + corpo) */
+/* 2) Todas as células alinhadas à esquerda por padrão */
 [data-testid="stDataFrame"] [role="gridcell"],
 [data-testid="stDataFrame"] [role="columnheader"] {
-  justify-content: flex-start !important; /* (BaseWeb usa flex) */
+  justify-content: flex-start !important;
   text-align: left !important;
 }
 
-/* 3) Cabeçalho preto + negrito */
+/* 3) Cabeçalho preto + negrito (mais específico) */
 [data-testid="stDataFrame"] [role="columnheader"],
+[data-testid="stDataFrame"] [role="columnheader"] span,
+[data-testid="stDataFrame"] [role="columnheader"] div,
 [data-testid="stDataFrame"] [role="columnheader"] * {
-  color: #000 !important;
+  color: #000000 !important;
   font-weight: 700 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+/* 4) Última coluna (Matrículas) - centralizada */
+[data-testid="stDataFrame"] [role="gridcell"]:last-child,
+[data-testid="stDataFrame"] [role="columnheader"]:last-child {
+  justify-content: center !important;
+  text-align: center !important;
 }
 
 
