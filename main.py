@@ -731,6 +731,31 @@ if col_matriculas in column_config:
 # Placeholder do somatório
 soma_placeholder = st.empty()
 
+# ── CSS dinâmico: centraliza apenas a última coluna (Matrículas) ──
+ncols = len(df_show.columns)
+
+st.markdown(
+    f"""
+<style>
+/* Corpo + cabeçalho: por padrão à esquerda */
+[data-testid="stDataFrame"] [role="gridcell"],
+[data-testid="stDataFrame"] [role="columnheader"] {{
+  justify-content: flex-start !important;
+  text-align: left !important;
+}}
+
+/* Última coluna: centralizada (por índice aria-colindex) */
+[data-testid="stDataFrame"] [role="gridcell"][aria-colindex="{ncols}"],
+[data-testid="stDataFrame"] [role="columnheader"][aria-colindex="{ncols}"] {{
+  justify-content: center !important;
+  text-align: center !important;
+}}
+</style>
+""",
+    unsafe_allow_html=True
+)
+
+
 # Tabela principal
 event = st.dataframe(
     df_show,  # <- exibe o DF formatado

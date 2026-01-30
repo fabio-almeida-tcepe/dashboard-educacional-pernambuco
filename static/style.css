@@ -382,32 +382,31 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] {
     border-radius: 5px !important;
     margin: 1.5rem 0 !important;
 }
-/* Substitua o bloco existente por: */
-[data-testid="stDataFrame"] th,
-[data-testid="stDataFrame"] td {
-    padding: 8px 12px !important;
-    white-space: normal !important;  /* Permite quebra de linha */
-    text-overflow: clip !important;  /* Remove reticências (...) */
-    max-width: 400px !important;     /* Aumenta o limite máximo */
+/* ─── DataFrame (st.dataframe): Streamlit usa grid (não th/td) ─── */
+
+/* 1) Quebra de linha e padding (células e cabeçalhos) */
+[data-testid="stDataFrame"] [role="gridcell"],
+[data-testid="stDataFrame"] [role="columnheader"] {
+  padding: 8px 12px !important;
+  white-space: normal !important;
+  text-overflow: clip !important;
+  align-items: flex-start !important;
 }
 
-/* Alinhamento: tudo à esquerda, exceto a última coluna */
-[data-testid="stDataFrame"] table td,
-[data-testid="stDataFrame"] table th {
+/* 2) Alinhar tudo à esquerda (cabeçalho + corpo) */
+[data-testid="stDataFrame"] [role="gridcell"],
+[data-testid="stDataFrame"] [role="columnheader"] {
+  justify-content: flex-start !important; /* (BaseWeb usa flex) */
   text-align: left !important;
 }
 
-[data-testid="stDataFrame"] table td:last-child,
-[data-testid="stDataFrame"] table th:last-child {
-  text-align: center !important;
-}
-
-/* Cabeçalho da tabela (thead): preto + negrito */
-[data-testid="stDataFrame"] table thead th,
-[data-testid="stDataFrame"] table thead th * {
+/* 3) Cabeçalho preto + negrito */
+[data-testid="stDataFrame"] [role="columnheader"],
+[data-testid="stDataFrame"] [role="columnheader"] * {
   color: #000 !important;
   font-weight: 700 !important;
 }
+
 
 /* Melhora o alinhamento vertical */
 [data-testid="stDataFrame"] td {
