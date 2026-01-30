@@ -199,8 +199,15 @@ div[data-baseweb="select"] > div:first-child {
 div[data-baseweb="tag"] {
   max-width: fit-content !important;
 }
+/* Forçar override de estilos inline */
+[data-baseweb="tag"][style] {
+  max-width: none !important;
+}
 
-
+[data-baseweb="tag"] span[style] {
+  max-width: none !important;
+  text-overflow: clip !important;
+}
 /* Container geral: linha discreta e espaçamento */
 .stats-container {
   font-size: 0.95rem;
