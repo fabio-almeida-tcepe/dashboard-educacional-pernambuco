@@ -172,13 +172,13 @@ ARQ = {k: v.arquivo for k, v in MODALIDADES.items()}
 
 # ─── 6‑B. LAYOUT DOS FILTROS ────────────────────────────────────────
 # Coluna esquerda (30%): Ano, Rede, Etapa, Subetapa, Série (empilhados)
-# Coluna direita (70%): Município, Escola (quando aplicável)
+# Coluna direita (70%): Município, Escola (empilhados verticalmente)
 LAYOUT_PRINCIPAL = [0.30, 0.70]
 
-# Proporções internas da coluna direita (Município + Escola)
+# Indica quais filtros mostrar na coluna direita por nível
 LAYOUT_DIREITA = {
-    "Escolas": [0.50, 0.50],  # Município + Escola
-    "Municípios": [1.0],  # Só Município
+    "Escolas": ["municipio", "escola"],  # Ambos empilhados
+    "Municípios": ["municipio"],  # Só Município
     "Pernambuco": [],  # Nenhum
 }
 
@@ -262,125 +262,148 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
             label_visibility="collapsed", key="rede_sel"
         )
 
-        # ---------- Etapa(s) de Ensino ----------
-        st.markdown('<div class="filter-title">Etapa(s) de Ensino</div>', unsafe_allow_html=True)
-        etapas_disp = sorted(df["Etapa"].unique())
-        padrao = config.etapa_valores.get("padrao", "")
-        default_etapas = [padrao] if padrao in etapas_disp else etapas_disp[:1]
-
-        etapa_sel = st.multiselect(
-            "Etapa", etapas_disp,
-            default=default_etapas,
-            label_visibility="collapsed", key="etapa_sel"
-        )
-
-        # ---------- Subetapa(s) ----------
-        st.markdown('<div class="filter-title">Subetapa(s)</div>', unsafe_allow_html=True)
-        is_total = etapa_sel and etapa_sel[0] in config.etapa_valores.get("totais", [])
-
-        if etapa_sel and not is_total:
-            sub_disp = sorted(
-                df.loc[df["Etapa"].isin(etapa_sel) & df["Subetapa"].notna(), "Subetapa"]
-                .pipe(lambda s: s[~s.astype(str).str.contains("Total", na=False)])
-                .unique()
-            )
-            sub_sel = st.multiselect(
-                "Subetapa", sub_disp,
-                default=[], label_visibility="collapsed", key="sub_sel",
-                placeholder="Todas as subetapas"
-            )
-        else:
-            st.text("Selecione etapa específica." if not etapa_sel else "Nenhuma subetapa disponível.")
-            sub_sel = []
-
-        # ---------- Série/Ano (somente Ensino Regular) ----------
+        # ---------- Etapa, Subetapa, Série (NÃO para nível Escolas) ----------
+        etapa_sel = []
+        sub_sel = []
         serie_sel = []
-        if modalidade_key == "Ensino Regular":
-            st.markdown('<div class="filter-title">Série/Ano</div>', unsafe_allow_html=True)
 
-            if sub_sel and not any("Total" in s for s in sub_sel):
-                serie_col = config.serie_col if config.serie_col in df.columns else "Série"
+        if nivel_ui != "Escolas":
+            # ---------- Etapa(s) de Ensino ----------
+            st.markdown('<div class="filter-title">Etapa(s) de Ensino</div>', unsafe_allow_html=True)
+            etapas_disp = sorted(df["Etapa"].unique())
+            padrao = config.etapa_valores.get("padrao", "")
+            default_etapas = [padrao] if padrao in etapas_disp else etapas_disp[:1]
 
-                if serie_col in df.columns:
-                    serie_disp = sorted(
-                        df.loc[
-                            df["Etapa"].isin(etapa_sel) &
-                            df["Subetapa"].isin(sub_sel) &
-                            df[serie_col].notna(),
-                            serie_col
-                        ].unique()
-                    )
-                    serie_sel = st.multiselect(
-                        "Série", serie_disp,
-                        default=[], label_visibility="collapsed", key="serie_sel",
-                        placeholder="Todas as séries"
-                    )
-                else:
-                    st.text(f"Coluna {serie_col} não encontrada.")
+            etapa_sel = st.multiselect(
+                "Etapa", etapas_disp,
+                default=default_etapas,
+                label_visibility="collapsed", key="etapa_sel"
+            )
+
+            # ---------- Subetapa(s) ----------
+            st.markdown('<div class="filter-title">Subetapa(s)</div>', unsafe_allow_html=True)
+            is_total = etapa_sel and etapa_sel[0] in config.etapa_valores.get("totais", [])
+
+            if etapa_sel and not is_total:
+                sub_disp = sorted(
+                    df.loc[df["Etapa"].isin(etapa_sel) & df["Subetapa"].notna(), "Subetapa"]
+                    .pipe(lambda s: s[~s.astype(str).str.contains("Total", na=False)])
+                    .unique()
+                )
+                sub_sel = st.multiselect(
+                    "Subetapa", sub_disp,
+                    default=[], label_visibility="collapsed", key="sub_sel",
+                    placeholder="Todas as subetapas"
+                )
             else:
-                st.text("Selecione subetapa específica.")
+                st.text("Selecione etapa específica." if not etapa_sel else "Nenhuma subetapa disponível.")
+
+            # ---------- Série/Ano (somente Ensino Regular) ----------
+            if modalidade_key == "Ensino Regular":
+                st.markdown('<div class="filter-title">Série/Ano</div>', unsafe_allow_html=True)
+
+                if sub_sel and not any("Total" in s for s in sub_sel):
+                    serie_col = config.serie_col if config.serie_col in df.columns else "Série"
+
+                    if serie_col in df.columns:
+                        serie_disp = sorted(
+                            df.loc[
+                                df["Etapa"].isin(etapa_sel) &
+                                df["Subetapa"].isin(sub_sel) &
+                                df[serie_col].notna(),
+                                serie_col
+                            ].unique()
+                        )
+                        serie_sel = st.multiselect(
+                            "Série", serie_disp,
+                            default=[], label_visibility="collapsed", key="serie_sel",
+                            placeholder="Todas as séries"
+                        )
+                    else:
+                        st.text(f"Coluna {serie_col} não encontrada.")
+                else:
+                    st.text("Selecione subetapa específica.")
 
     # ==================== COLUNA DIREITA (70%) - Município e Escola ====================
     municipios_sel = []
     escolas_sel = []
 
     with col_direita:
-        props_direita = LAYOUT_DIREITA[nivel_ui]
+        filtros_direita = LAYOUT_DIREITA[nivel_ui]
 
-        if props_direita:  # Se não for Pernambuco
+        if filtros_direita:  # Se não for Pernambuco
             if nivel_ui == "Escolas":
-                # Duas subcolunas: Município + Escola
-                sub_col_mun, sub_col_esc = st.columns(props_direita, gap="medium")
+                # ---------- Município(s) ----------
+                st.markdown('<div class="filter-title">Município(s)</div>', unsafe_allow_html=True)
+                municipios_disp = sorted(df["Nome do Município"].dropna().unique())
 
-                with sub_col_mun:
-                    st.markdown('<div class="filter-title">Município(s)</div>', unsafe_allow_html=True)
-                    municipios_disp = sorted(df["Nome do Município"].dropna().unique())
-                    municipios_sel = st.multiselect(
-                        "Município(s)", municipios_disp,
-                        default=[],
-                        label_visibility="collapsed", key="municipio_sel",
-                        placeholder="Todos os municípios"
+                # Verifica se há escola selecionada para auto-preencher município
+                escola_temp = st.session_state.get("escola_sel_temp", [])
+
+                # Se escola foi selecionada, descobrir município correspondente
+                municipios_default = []
+                if escola_temp:
+                    municipios_da_escola = df.loc[
+                        df["Nome da Escola"].isin(escola_temp),
+                        "Nome do Município"
+                    ].unique().tolist()
+                    municipios_default = [m for m in municipios_da_escola if m in municipios_disp]
+
+                municipios_sel = st.multiselect(
+                    "Município(s)", municipios_disp,
+                    default=municipios_default,
+                    label_visibility="collapsed", key="municipio_sel",
+                    placeholder="Selecione município(s)..."
+                )
+
+                # ---------- Escola(s) ----------
+                st.markdown('<div class="filter-title">Escola(s)</div>', unsafe_allow_html=True)
+
+                if municipios_sel:
+                    # Filtra escolas pelos municípios selecionados
+                    escolas_disp = sorted(
+                        df.loc[
+                            df["Nome do Município"].isin(municipios_sel) &
+                            df["Nome da Escola"].notna() &
+                            (df["Nome da Escola"] != ""),
+                            "Nome da Escola"
+                        ].unique()
                     )
-
-                with sub_col_esc:
-                    st.markdown('<div class="filter-title">Escola(s)</div>', unsafe_allow_html=True)
-
-                    if municipios_sel:
-                        escolas_disp = sorted(
-                            df.loc[
-                                df["Nome do Município"].isin(municipios_sel) &
-                                df["Nome da Escola"].notna() &
-                                (df["Nome da Escola"] != ""),
-                                "Nome da Escola"
-                            ].unique()
-                        )
-                        placeholder_esc = "Todas as escolas"
-                    else:
-                        escolas_disp = sorted(
-                            df.loc[
-                                df["Nome da Escola"].notna() &
-                                (df["Nome da Escola"] != ""),
-                                "Nome da Escola"
-                            ].unique()
-                        )
-                        placeholder_esc = "Selecione município(s) primeiro"
-
-                    escolas_sel = st.multiselect(
-                        "Escola(s)", escolas_disp,
-                        default=[],
-                        label_visibility="collapsed", key="escola_sel",
-                        placeholder=placeholder_esc
+                    placeholder_esc = "Selecione escola(s)..."
+                else:
+                    # Mostra todas as escolas para permitir seleção direta
+                    escolas_disp = sorted(
+                        df.loc[
+                            df["Nome da Escola"].notna() &
+                            (df["Nome da Escola"] != ""),
+                            "Nome da Escola"
+                        ].unique()
                     )
+                    placeholder_esc = "Selecione escola(s) ou município(s) primeiro..."
+
+                escolas_sel = st.multiselect(
+                    "Escola(s)", escolas_disp,
+                    default=[],
+                    label_visibility="collapsed", key="escola_sel",
+                    placeholder=placeholder_esc
+                )
+
+                # Salva escola selecionada para próximo rerun (auto-preencher município)
+                if escolas_sel and not municipios_sel:
+                    st.session_state["escola_sel_temp"] = escolas_sel
+                    st.rerun()
+                else:
+                    st.session_state["escola_sel_temp"] = []
 
             elif nivel_ui == "Municípios":
-                # Só Município (largura total da coluna direita)
+                # ---------- Município(s) ----------
                 st.markdown('<div class="filter-title">Município(s)</div>', unsafe_allow_html=True)
                 municipios_disp = sorted(df["Nome do Município"].dropna().unique())
                 municipios_sel = st.multiselect(
                     "Município(s)", municipios_disp,
                     default=[],
                     label_visibility="collapsed", key="municipio_sel",
-                    placeholder="Todos os municípios"
+                    placeholder="Selecione município(s)..."
                 )
 
         else:
@@ -515,6 +538,14 @@ if not anos_sel:
     st.stop()
 if not redes_sel:
     st.warning("Por favor, selecione pelo menos uma rede.")
+    st.stop()
+
+# Validação específica para nível Escolas: exige seleção de escola
+if nivel_ui == "Escolas" and not filtros_especificos.get("escola"):
+    st.info("👆 Selecione pelo menos uma **escola** para visualizar os dados.\n\n"
+            "Você pode:\n"
+            "- Escolher um município e depois a escola, ou\n"
+            "- Buscar diretamente pelo nome da escola.")
     st.stop()
 
 df_filtrado = filtrar_dados(df_base, tipo_ensino, anos_sel, redes_sel, filtros_especificos)
