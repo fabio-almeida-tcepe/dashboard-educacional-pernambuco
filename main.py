@@ -3,10 +3,11 @@ import streamlit as st
 import pandas as pd
 import io, re, time
 import base64, os
-from pathlib import Path
 import streamlit.components.v1 as components
 import psutil
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+from pathlib import Path
 
 # ─── 2. PAGE CONFIG (primeiro comando Streamlit!) ───────────────────
 st.set_page_config(
@@ -32,6 +33,23 @@ st.markdown(f"<style>{css_path.read_text(encoding='utf-8')}</style>",
 
 
 # ─── 4. FUNÇÕES UTIL ────────────────────────────────────────────────
+def obter_data_atualizacao_codigo(arquivos: list[Path], tz_name: str = "America/Recife") -> str:
+    # Pega o maior "mtime" (última modificação) entre os arquivos informados
+    mtimes = []
+    for p in arquivos:
+        try:
+            mtimes.append(p.stat().st_mtime)
+        except FileNotFoundError:
+            pass
+
+    if not mtimes:
+        return "N/D"
+
+    ts_utc = datetime.fromtimestamp(max(mtimes), tz=timezone.utc)
+    ts_local = ts_utc.astimezone(ZoneInfo(tz_name))
+    return ts_local.strftime("%d/%m/%Y %H:%M")
+
+
 def beautify(col: str) -> str:
     """Formata o nome de uma coluna para exibição"""
     return " ".join(p.capitalize() for p in col.replace("\n", " ").lower().split())
@@ -688,21 +706,30 @@ pag = Paginator(
 )
 df_page = pag.slice(df_texto)
 
-# Formatar colunas numéricas
+# ===================== EXIBIÇÃO (df_show) =====================
+# Mantém df_page numérico (para soma/contagem) e cria df_show apenas para renderizar
 df_show = df_page.copy()
+
+# Formatar colunas numéricas "Número de..." para pt-BR (milhar com ponto)
 colunas_numericas = df_show.filter(like="Número de").columns.tolist()
+for col in colunas_numericas:
+    df_show[col] = df_show[col].apply(format_number_br)  # 1.234.567
+
+# (Opcional) Renomear cabeçalhos somente no DataFrame exibido
 df_show.columns = [beautify_column_header(col) for col in df_show.columns]
 
-for col in colunas_numericas:
-    col_beautificada = beautify_column_header(col)
-    if col_beautificada in df_show.columns:
-        df_show[col_beautificada] = df_show[col_beautificada].apply(aplicar_padrao_numerico_brasileiro)
-
-# Configuração de larguras de coluna
-config_colunas = {col: {"width": "150px"} for col in df_show.columns}
+# Configuração de larguras de coluna (aqui vale para st.dataframe via column_config)
 col_matriculas = beautify_column_header("Número de Matrículas")
-if col_matriculas in config_colunas:
-    config_colunas[col_matriculas] = {"width": "120px"}
+column_config = {
+    c: st.column_config.Column(c, width="medium")  # padrão
+    for c in df_show.columns
+}
+if col_matriculas in column_config:
+    column_config[col_matriculas] = st.column_config.TextColumn(
+        col_matriculas,
+        width="small",
+        help="Inteiro no padrão pt-BR (ex.: 1.234.567)"
+    )
 
 # Placeholder do somatório
 soma_placeholder = st.empty()
@@ -851,13 +878,22 @@ with st.sidebar:
 st.markdown("---")
 
 footer_left, footer_right = st.columns([3, 1])
+arquivos_codigo = [
+    Path(__file__).resolve(),          # arquivo .py atual
+    css_path.resolve(),                # seu CSS
+    # opcional: incluir outros módulos/arquivos que definem o app
+    # Path(__file__).parent / "utils.py",
+]
+
+data_atualizacao = obter_data_atualizacao_codigo(arquivos_codigo, "America/Recife")
+
 
 with footer_left:
-    st.caption("© Dashboard Educacional – atualização: Mai 2025")
+    st.caption(f"© Dashboard Educacional – atualização: {data_atualizacao}")
     delta = time.time() - st.session_state.get("tempo_inicio", time.time())
     st.caption(f"⏱️ Tempo de processamento: {delta:.2f}s")
 
 with footer_right:
-    st.caption(f"Build: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+    st.caption(f"Build (UTC): {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}")
 
 st.session_state["tempo_inicio"] = time.time()
