@@ -4,7 +4,6 @@ import pandas as pd
 import io, re, time
 import base64, os
 import streamlit.components.v1 as components
-import psutil
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -444,13 +443,7 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
                 )
 
         else:
-            # Pernambuco - coluna direita vazia ou com informação
-            st.markdown(
-                '<div style="padding: 20px; color: #666; font-style: italic;">'
-                'Nível "Pernambuco" selecionado — dados agregados para todo o estado.'
-                '</div>',
-                unsafe_allow_html=True
-            )
+            pass  # Pernambuco - coluna direita vazia
 
     # ==================== RETORNO ====================
     filtros = {
@@ -554,14 +547,6 @@ with st.spinner("Carregando dados otimizados…"):
 if df_base.empty:
     st.warning(f"Não há dados disponíveis para o nível '{nivel_ui}'.")
     st.stop()
-
-# RAM na sidebar
-with st.sidebar:
-    ram_mb = psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2
-    st.markdown(
-        f'<div class="ram-indicator">💾 RAM usada: <b>{ram_mb:.0f} MB</b></div>',
-        unsafe_allow_html=True
-    )
 
 # ─── 12. PAINEL DE FILTROS DINÂMICOS ─────────────────────────────
 with st.container():
