@@ -177,37 +177,18 @@ section[data-testid="stSidebar"] .stExpander p {
     margin: 0.3rem 0 !important;
     font-family: Arial, sans-serif !important;
 }
-/* ─── Multiselect: não truncar as tags selecionadas (Streamlit 1.45+) ─── */
-[data-baseweb="tag"] {
+
+/* ─── Multiselect: não truncar tags (Streamlit 1.45) ─── */
+span[data-baseweb="tag"] {
+  max-width: none !important;
+}
+
+span[data-baseweb="tag"] > span:first-child {
   max-width: none !important;
   overflow: visible !important;
+  text-overflow: unset !important;
 }
 
-[data-baseweb="tag"] span {
-  white-space: nowrap !important;
-  text-overflow: clip !important;
-  overflow: visible !important;
-  max-width: none !important;
-}
-
-/* Container das tags */
-div[data-baseweb="select"] > div:first-child {
-  flex-wrap: wrap !important;
-}
-
-/* Tag individual - força largura total */
-div[data-baseweb="tag"] {
-  max-width: fit-content !important;
-}
-/* Forçar override de estilos inline */
-[data-baseweb="tag"][style] {
-  max-width: none !important;
-}
-
-[data-baseweb="tag"] span[style] {
-  max-width: none !important;
-  text-overflow: clip !important;
-}
 /* Container geral: linha discreta e espaçamento */
 .stats-container {
   font-size: 0.95rem;
