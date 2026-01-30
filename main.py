@@ -334,8 +334,15 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
         if filtros_direita:  # Se não for Pernambuco
             if nivel_ui == "Escolas":
                 # ---------- Município(s) ----------
+                # Aplicar filtros de Ano e Rede para lista de municípios
+                df_pre_filtrado = df.copy()
+                if anos_sel:
+                    df_pre_filtrado = df_pre_filtrado[df_pre_filtrado["Ano"].isin(anos_sel)]
+                if redes_sel:
+                    df_pre_filtrado = df_pre_filtrado[df_pre_filtrado["Rede"].isin(redes_sel)]
+
                 st.markdown('<div class="filter-title">Município(s)</div>', unsafe_allow_html=True)
-                municipios_disp = sorted(df["Nome do Município"].dropna().unique())
+                municipios_disp = sorted(df_pre_filtrado["Nome do Município"].dropna().unique())
 
                 # Verifica se há escola selecionada para auto-preencher município
                 escola_temp = st.session_state.get("escola_sel_temp", [])
@@ -343,8 +350,8 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
                 # Se escola foi selecionada, descobrir município correspondente
                 municipios_default = []
                 if escola_temp:
-                    municipios_da_escola = df.loc[
-                        df["Nome da Escola"].isin(escola_temp),
+                    municipios_da_escola = df_pre_filtrado.loc[
+                        df_pre_filtrado["Nome da Escola"].isin(escola_temp),
                         "Nome do Município"
                     ].unique().tolist()
                     municipios_default = [m for m in municipios_da_escola if m in municipios_disp]
@@ -357,28 +364,33 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
                 )
 
                 # ---------- Escola(s) ----------
-                st.markdown('<div class="filter-title">Escola(s)</div>', unsafe_allow_html=True)
-
                 if municipios_sel:
                     # Filtra escolas pelos municípios selecionados
                     escolas_disp = sorted(
-                        df.loc[
-                            df["Nome do Município"].isin(municipios_sel) &
-                            df["Nome da Escola"].notna() &
-                            (df["Nome da Escola"] != ""),
+                        df_pre_filtrado.loc[
+                            df_pre_filtrado["Nome do Município"].isin(municipios_sel) &
+                            df_pre_filtrado["Nome da Escola"].notna() &
+                            (df_pre_filtrado["Nome da Escola"] != ""),
                             "Nome da Escola"
                         ].unique()
+                    )
+                    total_escolas = len(escolas_disp)
+                    st.markdown(
+                        f'<div class="filter-title">Escola(s) '
+                        f'<span style="font-weight:normal;color:#888;font-size:0.9em;">— {total_escolas} disponíveis</span></div>',
+                        unsafe_allow_html=True
                     )
                     placeholder_esc = "Selecione escola(s)..."
                 else:
                     # Mostra todas as escolas para permitir seleção direta
                     escolas_disp = sorted(
-                        df.loc[
-                            df["Nome da Escola"].notna() &
-                            (df["Nome da Escola"] != ""),
+                        df_pre_filtrado.loc[
+                            df_pre_filtrado["Nome da Escola"].notna() &
+                            (df_pre_filtrado["Nome da Escola"] != ""),
                             "Nome da Escola"
                         ].unique()
                     )
+                    st.markdown('<div class="filter-title">Escola(s)</div>', unsafe_allow_html=True)
                     placeholder_esc = "Selecione escola(s) ou município(s) primeiro..."
 
                 escolas_sel = st.multiselect(
@@ -397,8 +409,15 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
 
             elif nivel_ui == "Municípios":
                 # ---------- Município(s) ----------
+                # Aplicar filtros de Ano e Rede para lista de municípios
+                df_pre_filtrado = df.copy()
+                if anos_sel:
+                    df_pre_filtrado = df_pre_filtrado[df_pre_filtrado["Ano"].isin(anos_sel)]
+                if redes_sel:
+                    df_pre_filtrado = df_pre_filtrado[df_pre_filtrado["Rede"].isin(redes_sel)]
+
                 st.markdown('<div class="filter-title">Município(s)</div>', unsafe_allow_html=True)
-                municipios_disp = sorted(df["Nome do Município"].dropna().unique())
+                municipios_disp = sorted(df_pre_filtrado["Nome do Município"].dropna().unique())
                 municipios_sel = st.multiselect(
                     "Município(s)", municipios_disp,
                     default=[],
