@@ -735,25 +735,18 @@ soma_placeholder = st.empty()
 ncols = len(df_show.columns)
 
 st.markdown(
-    f"""
+    """
 <style>
-/* Corpo + cabeçalho: por padrão à esquerda */
-[data-testid="stDataFrame"] [role="gridcell"],
-[data-testid="stDataFrame"] [role="columnheader"] {{
-  justify-content: flex-start !important;
-  text-align: left !important;
-}}
-
-/* Última coluna: centralizada (por índice aria-colindex) */
-[data-testid="stDataFrame"] [role="gridcell"][aria-colindex="{ncols}"],
-[data-testid="stDataFrame"] [role="columnheader"][aria-colindex="{ncols}"] {{
-  justify-content: center !important;
-  text-align: center !important;
-}}
+[data-testid="stDataFrame"] [role="columnheader"],
+[data-testid="stDataFrame"] [role="columnheader"] * {
+  color: #000 !important;
+  font-weight: 700 !important;
+}
 </style>
 """,
     unsafe_allow_html=True
 )
+
 
 
 # Tabela principal
