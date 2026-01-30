@@ -360,15 +360,20 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] summary{
 /* Cabeçalhos das colunas */
 .column-header {
     background: #daba93;
-    text-align: center;
-    font-weight: bold;
+    color: #000 !important;
+    font-weight: 700 !important;
+
     height: 50px !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: center !important;
-    padding: 5px !important;
+
+    justify-content: flex-start !important; /* esquerda */
+    text-align: left !important;
+
+    padding: 5px 10px !important;
     margin-bottom: 8px !important;
 }
+
 
 /* Expander */
 section[data-testid="stSidebar"] [data-testid="stExpander"] {
@@ -384,6 +389,24 @@ section[data-testid="stSidebar"] [data-testid="stExpander"] {
     white-space: normal !important;  /* Permite quebra de linha */
     text-overflow: clip !important;  /* Remove reticências (...) */
     max-width: 400px !important;     /* Aumenta o limite máximo */
+}
+
+/* Alinhamento: tudo à esquerda, exceto a última coluna */
+[data-testid="stDataFrame"] table td,
+[data-testid="stDataFrame"] table th {
+  text-align: left !important;
+}
+
+[data-testid="stDataFrame"] table td:last-child,
+[data-testid="stDataFrame"] table th:last-child {
+  text-align: center !important;
+}
+
+/* Cabeçalho da tabela (thead): preto + negrito */
+[data-testid="stDataFrame"] table thead th,
+[data-testid="stDataFrame"] table thead th * {
+  color: #000 !important;
+  font-weight: 700 !important;
 }
 
 /* Melhora o alinhamento vertical */

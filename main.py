@@ -640,14 +640,11 @@ df_tabela = df_filtrado[vis_cols].copy()
 
 # Estilização da tabela
 st.markdown("""<style>
-[data-testid="stDataFrame"] table tbody tr td:last-child,
-[data-testid="stDataFrame"] table thead tr th:last-child {
-    text-align:center !important;
-}
 [data-testid="stDataFrame"] table tbody tr:hover {
     background-color: rgba(107, 129, 144, 0.1) !important;
 }
 </style>""", unsafe_allow_html=True)
+
 
 # Cabeçalhos dos filtros em colunas
 filter_cols = st.columns(len(vis_cols))
@@ -656,7 +653,7 @@ filter_values = {}
 for i, col in enumerate(vis_cols):
     with filter_cols[i]:
         header_name = beautify_column_header(col)
-        extra = " style='text-align:center'" if col == "Número de Matrículas" else ""
+        extra = " style='justify-content:center;text-align:center'" if col == "Número de Matrículas" else ""
         st.markdown(f"<div class='column-header'{extra}>{header_name}</div>", unsafe_allow_html=True)
 
         filter_values[col] = st.text_input(
