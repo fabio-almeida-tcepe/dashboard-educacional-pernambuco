@@ -731,47 +731,47 @@ if col_matriculas in column_config:
 # Placeholder do somatório
 soma_placeholder = st.empty()
 
-# ── CSS dinâmico: centraliza apenas a última coluna (Matrículas) ──
-ncols = len(df_show.columns)
+# ── CSS dinâmico: centraliza apenas a coluna "Matrículas" no st.dataframe ──
+# (aria-colindex é 1-based)
+idx_matriculas = df_show.columns.get_loc(col_matriculas) + 1
 
 st.markdown(
-    """
+    f"""
 <style>
-.reportview-container .markdown-text-container {
-    font-family: monospace;
-}
-.sidebar .sidebar-content {
-    background-image: linear-gradient(#2e7bcf,#2e7bcf);
-    color: white;
-}
-.Widget>label {
-    color: white;
-    font-family: monospace;
-}
-[class^="st-b"]  {
-    color: white;
-    font-family: monospace;
-}
-.st-bb {
-    background-color: transparent;
-}
-.st-at {
-    background-color: #0c0080;
-}
-footer {
-    font-family: monospace;
-}
-.reportview-container .main footer, .reportview-container .main footer a {
-    color: #0c0080;
-}
-header .decoration {
-    background-image: none;
-}
+/* Base: tudo à esquerda (cabeçalho + corpo) */
+[data-testid="stDataFrame"] [role="gridcell"],
+[data-testid="stDataFrame"] [role="columnheader"] {{
+  justify-content: flex-start !important;
+  text-align: left !important;
+  white-space: normal !important;
+  text-overflow: clip !important;
+  align-items: flex-start !important;
+  padding: 8px 12px !important;
+}}
 
+/* Cabeçalho: preto + negrito */
+[data-testid="stDataFrame"] [role="columnheader"],
+[data-testid="stDataFrame"] [role="columnheader"] * {{
+  color: #000 !important;
+  font-weight: 700 !important;
+}}
+
+/* Coluna Matrículas: centralizada (cabeçalho + corpo) */
+[data-testid="stDataFrame"] [role="gridcell"][aria-colindex="{idx_matriculas}"],
+[data-testid="stDataFrame"] [role="columnheader"][aria-colindex="{idx_matriculas}"] {{
+  justify-content: center !important;
+  text-align: center !important;
+}}
+
+/* Hover de linha (st.dataframe não usa table/tr/td na prática) */
+[data-testid="stDataFrame"] [role="row"]:hover [role="gridcell"] {{
+  background-color: rgba(107, 129, 144, 0.10) !important;
+}}
 </style>
 """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
+
 
 
 
