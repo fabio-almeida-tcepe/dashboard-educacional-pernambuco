@@ -736,14 +736,16 @@ soma_placeholder = st.empty()
 
 # Tabela principal
 event = st.dataframe(
-    df_page,
+    df_show,  # <- exibe o DF formatado
     height=altura_tabela,
     use_container_width=True,
     hide_index=True,
     selection_mode=["multi-row", "multi-column"],
     on_select="rerun",
-    key="tabela_principal"
+    key="tabela_principal",
+    column_config=column_config,
 )
+
 
 # Resultado do selecionado: soma ou contagem
 sel_rows = event.selection.rows
