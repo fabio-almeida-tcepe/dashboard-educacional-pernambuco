@@ -247,7 +247,7 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
     # ==================== LINHA 1: Ano + Rede + Município + Escola ====================
     # Definir colunas baseado no nível
     if nivel_ui == "Escolas":
-        col_ano, col_rede, col_mun, col_esc = st.columns([0.10, 0.10, 0.15, 0.20], gap="medium")
+        col_ano, col_rede, col_mun, col_esc = st.columns([0.05, 0.05, 0.15, 0.20], gap="medium")
     elif nivel_ui == "Municípios":
         col_ano, col_rede, col_mun = st.columns([0.15, 0.35, 0.50], gap="medium")
         col_esc = None
