@@ -707,6 +707,10 @@ df_page = pag.slice(df_texto)
 # Mantém df_page numérico (para soma/contagem) e cria df_show apenas para renderizar
 df_show = df_page.copy()
 
+# Converter Ano para string (evita alinhamento à direita)
+if "Ano" in df_show.columns:
+    df_show["Ano"] = df_show["Ano"].astype(str)
+
 # Formatar colunas numéricas "Número de..." para pt-BR (milhar com ponto)
 colunas_numericas = df_show.filter(like="Número de").columns.tolist()
 for col in colunas_numericas:
