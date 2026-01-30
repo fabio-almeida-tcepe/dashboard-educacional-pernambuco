@@ -241,13 +241,22 @@ def carregar_parquet_otimizado(arquivo: str, nivel: str | None = None) -> pd.Dat
 
 # ─── 8. CONSTRUÇÃO DOS FILTROS DINÂMICOS ───────────────────────────
 def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
-    """Cria filtros de ano, rede, etapa, etc., para a modalidade escolhida."""
+    """Cria filtros de ano, rede, município, escola, etapa, etc."""
     config = MODALIDADES[modalidade_key]
 
-    # ---------- coluna esquerda (Ano / Rede) ----------
-    c_left, c_right = st.columns([0.4, 0.8], gap="large")
-    with c_left:
-        # Ano(s)
+    # ==================== LINHA 1: Ano + Rede + Município + Escola ====================
+    # Definir colunas baseado no nível
+    if nivel_ui == "Escolas":
+        col_ano, col_rede, col_mun, col_esc = st.columns([0.15, 0.25, 0.30, 0.30], gap="medium")
+    elif nivel_ui == "Municípios":
+        col_ano, col_rede, col_mun = st.columns([0.15, 0.35, 0.50], gap="medium")
+        col_esc = None
+    else:  # Pernambuco
+        col_ano, col_rede = st.columns([0.3, 0.7], gap="medium")
+        col_mun, col_esc = None, None
+
+    # ---------- Ano ----------
+    with col_ano:
         st.markdown('<div class="filter-title">Ano(s)</div>', unsafe_allow_html=True)
         anos_disp = sorted(df["Ano"].unique(), reverse=True)
         anos_sel = st.multiselect(
@@ -256,9 +265,9 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
             label_visibility="collapsed", key="ano_sel"
         )
 
-        # Rede(s)
-        st.markdown('<div class="filter-title" style="margin-top:-12px;">Rede(s)</div>',
-                    unsafe_allow_html=True)
+    # ---------- Rede ----------
+    with col_rede:
+        st.markdown('<div class="filter-title">Rede(s)</div>', unsafe_allow_html=True)
         redes_disp = sorted(df["Rede"].dropna().unique())
         default_redes = ["Pública e Privada"] if "Pública e Privada" in redes_disp else []
         redes_sel = st.multiselect(
@@ -267,11 +276,71 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
             label_visibility="collapsed", key="rede_sel"
         )
 
-    # ---------- coluna direita (Etapa / Subetapa / Série) ----------
-    with c_right:
-        filtros = {}
+    # ---------- Município (Escolas e Municípios) ----------
+    municipios_sel = []
+    if col_mun is not None:
+        with col_mun:
+            st.markdown('<div class="filter-title">Município(s)</div>', unsafe_allow_html=True)
+            municipios_disp = sorted(df["Nome do Município"].dropna().unique())
+            municipios_sel = st.multiselect(
+                "Município(s)", municipios_disp,
+                default=[],
+                label_visibility="collapsed", key="municipio_sel",
+                placeholder="Todos os municípios"
+            )
 
-        # Etapa
+    # ---------- Escola (apenas Escolas, após selecionar município) ----------
+    escolas_sel = []
+    if col_esc is not None:
+        with col_esc:
+            st.markdown('<div class="filter-title">Escola(s)</div>', unsafe_allow_html=True)
+
+            if municipios_sel:
+                # Filtra escolas pelos municípios selecionados
+                escolas_disp = sorted(
+                    df.loc[
+                        df["Nome do Município"].isin(municipios_sel) &
+                        df["Nome da Escola"].notna() &
+                        (df["Nome da Escola"] != ""),
+                        "Nome da Escola"
+                    ].unique()
+                )
+                escolas_sel = st.multiselect(
+                    "Escola(s)", escolas_disp,
+                    default=[],
+                    label_visibility="collapsed", key="escola_sel",
+                    placeholder="Todas as escolas"
+                )
+            else:
+                # Mostra todas as escolas se nenhum município selecionado
+                escolas_disp = sorted(
+                    df.loc[
+                        df["Nome da Escola"].notna() &
+                        (df["Nome da Escola"] != ""),
+                        "Nome da Escola"
+                    ].unique()
+                )
+                escolas_sel = st.multiselect(
+                    "Escola(s)", escolas_disp,
+                    default=[],
+                    label_visibility="collapsed", key="escola_sel",
+                    placeholder="Selecione município(s) primeiro ou escolha escola(s)"
+                )
+
+    # ==================== LINHA 2: Etapa + Subetapa + Série ====================
+    filtros = {}
+    filtros["municipio"] = municipios_sel
+    filtros["escola"] = escolas_sel
+
+    # Definir colunas para Etapa/Subetapa/Série
+    if modalidade_key == "Ensino Regular":
+        col_etapa, col_sub, col_serie = st.columns([0.33, 0.33, 0.34], gap="medium")
+    else:
+        col_etapa, col_sub = st.columns([0.5, 0.5], gap="medium")
+        col_serie = None
+
+    # ---------- Etapa ----------
+    with col_etapa:
         st.markdown('<div class="filter-title">Etapa</div>', unsafe_allow_html=True)
         etapas_disp = sorted(df["Etapa"].unique())
         padrao = config.etapa_valores.get("padrao", "")
@@ -284,9 +353,9 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
         )
         filtros["etapa"] = etapa_sel
 
-        # Subetapa
-        st.markdown('<div class="filter-title" style="margin-top:-12px;">Subetapa</div>',
-                    unsafe_allow_html=True)
+    # ---------- Subetapa ----------
+    with col_sub:
+        st.markdown('<div class="filter-title">Subetapa</div>', unsafe_allow_html=True)
         is_total = etapa_sel and etapa_sel[0] in config.etapa_valores.get("totais", [])
 
         if etapa_sel and not is_total:
@@ -297,7 +366,8 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
             )
             sub_sel = st.multiselect(
                 "Subetapa", sub_disp,
-                default=[], label_visibility="collapsed", key="sub_sel"
+                default=[], label_visibility="collapsed", key="sub_sel",
+                placeholder="Todas as subetapas"
             )
         else:
             st.text("Nenhuma subetapa disponível." if etapa_sel else "Selecione uma etapa primeiro.")
@@ -305,33 +375,38 @@ def construir_filtros_ui(df: pd.DataFrame, modalidade_key: str, nivel_ui: str):
 
         filtros["subetapa"] = sub_sel
 
-        # Série (somente Ensino Regular)
-        if modalidade_key == "Ensino Regular" and sub_sel and not any("Total" in s for s in sub_sel):
-            st.markdown('<div class="filter-title" style="margin-top:-12px;">Série</div>',
-                        unsafe_allow_html=True)
+    # ---------- Série (somente Ensino Regular) ----------
+    if col_serie is not None:
+        with col_serie:
+            if modalidade_key == "Ensino Regular" and sub_sel and not any("Total" in s for s in sub_sel):
+                st.markdown('<div class="filter-title">Série</div>', unsafe_allow_html=True)
 
-            # Verificar o nome correto da coluna de série
-            serie_col = config.serie_col if config.serie_col in df.columns else "Série"
+                serie_col = config.serie_col if config.serie_col in df.columns else "Série"
 
-            if serie_col in df.columns:  # Verificar se a coluna existe
-                serie_disp = sorted(
-                    df.loc[
-                        df["Etapa"].isin(etapa_sel) &
-                        df["Subetapa"].isin(sub_sel) &
-                        df[serie_col].notna(),
-                        serie_col
-                    ].unique()
-                )
-                serie_sel = st.multiselect(
-                    "Série", serie_disp,
-                    default=[], label_visibility="collapsed", key="serie_sel"
-                )
-                filtros["serie"] = serie_sel
+                if serie_col in df.columns:
+                    serie_disp = sorted(
+                        df.loc[
+                            df["Etapa"].isin(etapa_sel) &
+                            df["Subetapa"].isin(sub_sel) &
+                            df[serie_col].notna(),
+                            serie_col
+                        ].unique()
+                    )
+                    serie_sel = st.multiselect(
+                        "Série", serie_disp,
+                        default=[], label_visibility="collapsed", key="serie_sel",
+                        placeholder="Todas as séries"
+                    )
+                    filtros["serie"] = serie_sel
+                else:
+                    st.text(f"Coluna {serie_col} não encontrada.")
+                    filtros["serie"] = []
             else:
-                st.text(f"Coluna {serie_col} não encontrada nos dados.")
+                st.markdown('<div class="filter-title">Série</div>', unsafe_allow_html=True)
+                st.text("Selecione subetapa específica.")
                 filtros["serie"] = []
-        else:
-            filtros["serie"] = []
+    else:
+        filtros["serie"] = []
 
     return anos_sel, redes_sel, filtros
 
@@ -349,6 +424,16 @@ def filtrar_dados(df, modalidade_key, anos, redes, filtros):
 
     if redes:
         result_df = result_df[result_df["Rede"].isin(redes)]
+
+    # ─── FILTRO DE MUNICÍPIO ───────────────────────────────────────
+    municipios_sel = filtros.get("municipio", [])
+    if municipios_sel:
+        result_df = result_df[result_df["Nome do Município"].isin(municipios_sel)]
+
+    # ─── FILTRO DE ESCOLA ──────────────────────────────────────────
+    escolas_sel = filtros.get("escola", [])
+    if escolas_sel:
+        result_df = result_df[result_df["Nome da Escola"].isin(escolas_sel)]
 
     # ─── LÓGICA ESPECÍFICA PARA EJA ────────────────────────────────
     if modalidade_key == "EJA - Educação de Jovens e Adultos":
@@ -424,7 +509,6 @@ with st.sidebar:
 
 # Carregamento com spinner de progresso
 with st.spinner("Carregando dados otimizados…"):
-
     # Carregar dados
     df_base = carregar_parquet_otimizado(
         ARQ[tipo_ensino],
@@ -614,7 +698,7 @@ if col_matriculas in config_colunas:
     config_colunas[col_matriculas] = {"width": "120px"}
 
 # ─── PLACEHOLDER DO SOMATÓRIO (acima da tabela) ────────────────────
-soma_placeholder = st.empty()          # cria espaço antes da grade
+soma_placeholder = st.empty()  # cria espaço antes da grade
 
 # ─── TABELA PRINCIPAL ──────────────────────────────────────────────
 event = st.dataframe(
@@ -636,7 +720,7 @@ if sel_rows and sel_cols:
     sel_vals = df_page.iloc[sel_rows][sel_cols].stack()
 
     # Converte a números (texto vira NaN)
-    sel_num  = pd.to_numeric(sel_vals, errors="coerce")
+    sel_num = pd.to_numeric(sel_vals, errors="coerce")
 
     if sel_num.notna().any():  # há pelo menos 1 número
         total = sel_num.sum()
